@@ -18,14 +18,79 @@ document.addEventListener("DOMContentLoaded", () => {
         const activityCard = document.createElement("div");
         activityCard.className = "activity-card";
 
-        const spotsLeft = details.max_participants - details.participants.length;
+        const participants = Array.isArray(details.participants) ? details.participants : [];
+        const spotsLeft = details.max_participants - participants.length;
 
-        activityCard.innerHTML = `
-          <h4>${name}</h4>
-          <p>${details.description}</p>
-          <p><strong>Schedule:</strong> ${details.schedule}</p>
-          <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
-        `;
+        const title = document.createElement("h4");
+        title.textContent = name;
+
+        const desc = document.createElement("p");
+        desc.textContent = details.description;
+
+        const schedule = document.createElement("p");
+        schedule.innerHTML = `<strong>Schedule:</strong> ${details.schedule}`;
+
+        const availability = document.createElement("p");
+        availability.innerHTML = `<strong>Availability:</strong> ${spotsLeft} spots left`;
+
+        const participantsBlock = document.createElement("div");
+        participantsBlock.className = "participants";
+
+        const participantsHeading = document.createElement("strong");
+        participantsHeading.textContent = "Participants:";
+        participantsBlock.appendChild(participantsHeading);
+
+        console.log(`Rendering activity card for ${name}. participants=`, participants);
+        console.log(`Rendering activity card for ${name}. participants=`, participants);
+        if (participants.length > 0) {
+          const list = document.createElement("ul");
+          list.className = "participants-list";
+          participants.forEach(p => {
+            const li = document.createElement("li");
+            const emailSpan = document.createElement("span");
+            emailSpan.textContent = p;
+            const deleteIcon = document.createElement("span");
+            deleteIcon.textContent = " ×";
+            deleteIcon.className = "delete-icon";
+            deleteIcon.style.cursor = "pointer";
+            deleteIcon.style.color = "#c62828";
+            deleteIcon.style.marginLeft = "10px";
+            deleteIcon.addEventListener("click", async () => {
+              try {
+                const response = await fetch(
+                  `/activities/${encodeURIComponent(name)}/unregister?email=${encodeURIComponent(p)}`,
+                  {
+                    method: "DELETE",
+                  }
+                );
+                const result = await response.json();
+                if (response.ok) {
+                  await fetchActivities();
+                } else {
+                  alert(result.detail || "An error occurred");
+                }
+              } catch (error) {
+                alert("Failed to unregister. Please try again.");
+                console.error("Error unregistering:", error);
+              }
+            });
+            li.appendChild(emailSpan);
+            li.appendChild(deleteIcon);
+            list.appendChild(li);
+          });
+          participantsBlock.appendChild(list);
+        } else {
+          const noParticipants = document.createElement("p");
+          noParticipants.className = "no-participants";
+          noParticipants.textContent = "No participants signed up yet.";
+          participantsBlock.appendChild(noParticipants);
+        }
+
+        activityCard.appendChild(title);
+        activityCard.appendChild(desc);
+        activityCard.appendChild(schedule);
+        activityCard.appendChild(availability);
+        activityCard.appendChild(participantsBlock);
 
         activitiesList.appendChild(activityCard);
 
@@ -62,6 +127,7 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        await fetchActivities();
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
