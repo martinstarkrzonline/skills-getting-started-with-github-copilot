@@ -18,7 +18,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4.0.0
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3.5.0
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
     - name: Add conda to system path
@@ -34,17 +34,14 @@ jobs:
     - name: Install dependencies
       run: |
         conda env create -f environment.yml -n myenv
-        conda activate myenv
     - name: Lint with flake8
       run: |
-        conda activate myenv
-        pip install flake8
+        conda run -n myenv pip install flake8
         # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        conda run -n myenv flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        conda run -n myenv flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        conda activate myenv
-        pip install pytest
-        pytest
+        conda run -n myenv pip install pytest
+        conda run -n myenv pytest
